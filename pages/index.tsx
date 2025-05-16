@@ -24,9 +24,12 @@ export default function Home({ channels }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUrl, setCurrentUrl] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [volume, setVolume] = useState(0.5);
+  // const [muted, setMuted] = useState(false);
+  // const [playbackRate, setPlaybackRate] = useState(1.0);
 
   const FIXED_TOKEN =
-    "5c04cad87b3fe51326b9227801117f24ced893a3-782a46ed37420de6b02ec5a9ad8a099a-1747375362-1747364562";
+    "1fd181a9b035498110ec2a36a585b378be52fe13-13683c860a7b7efc2a6e45dcf182723b-1747408584-1747397784";
 
   // Autoplay first channel on mount
   useEffect(() => {
@@ -60,24 +63,51 @@ export default function Home({ channels }: Props) {
   // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") {
-        const next = (currentIndex + 1) % filtered.length;
-        updateChannel(next);
-      } else if (e.key === "ArrowLeft") {
-        const prev = (currentIndex - 1 + filtered.length) % filtered.length;
-        updateChannel(prev);
+      // CHANNEL NAVIGATION
+      if (["ArrowRight","MediaTrackNext","ChannelDown"].includes(e.code) || e.key==="ArrowRight") {
+        e.preventDefault();
+        updateChannel((currentIndex + 1) % filtered.length);
+      }
+      else if (["ArrowLeft","MediaTrackPrevious","ChannelUp"].includes(e.code) || e.key==="ArrowLeft") {
+        e.preventDefault();
+        updateChannel((currentIndex - 1 + filtered.length) % filtered.length);
+      }
+  
+      // VOLUME CONTROL (if the TV forwards these)
+      else if (["ArrowUp","AudioVolumeUp","VolumeUp","MediaVolumeUp"].includes(e.code) || e.key==="ArrowUp") {
+        e.preventDefault();
+        setVolume(v => Math.min(1, v + 0.1));
+      }
+      else if (["ArrowDown","AudioVolumeDown","VolumeDown","MediaVolumeDown"].includes(e.code) || e.key==="ArrowDown") {
+        e.preventDefault();
+        setVolume(v => Math.max(0, v - 0.1));
       }
     };
+  
+    // Log unknown keys during testing:
+    const logger = (e: KeyboardEvent) => console.log("KeyEvent:", e.key, e.code);
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    window.addEventListener("keydown", logger);
+  
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("keydown", logger);
+    };
   }, [filtered, currentIndex, updateChannel]);
 
   return (
     <div className={styles.container}>
       <Head>
-        <title>TV Channels</title>
+        <title>HappyNet TV Channels</title>
       </Head>
       <main className={styles.main}>
+        <div className={styles.header}>
+        <img
+          src="/happynet.jpeg"
+          alt="HappyNet TV"
+          className={styles.logo}
+          />
+        </div>
         <div className={styles.player}>
           {currentUrl ? (
             <ReactPlayer
@@ -86,6 +116,7 @@ export default function Home({ channels }: Props) {
               controls
               width="100%"
               height="100%"
+              volume={volume}
               style={{ backgroundColor: "#000" }}
             />
           ) : (
@@ -99,21 +130,23 @@ export default function Home({ channels }: Props) {
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.search}
         />
-        <div className={styles.grid}>
-          {filtered.map((ch, idx) => (
-            <div
-              key={ch.ch_id}
-              className={styles.card}
-              onClick={() => updateChannel(idx)}
-            >
-              <img
-                src={`http://tv.roarzone.info${ch.img_url}`}
-                alt={ch.ch_name}
-                className={styles.thumb}
-              />
-              <h3>{ch.ch_name}</h3>
-            </div>
-          ))}
+        <div className={styles.gridWrapper}>
+          <div className={styles.gridScrollable}>
+            {filtered.map((ch, idx) => (
+              <div
+                key={ch.ch_id}
+                className={styles.cardScrollable}
+                onClick={() => updateChannel(idx)}
+              >
+                <img
+                  src={`http://tv.roarzone.info${ch.img_url}`}
+                  alt={ch.ch_name}
+                  className={styles.thumbScrollable}
+                />
+                <h3>{ch.ch_name}</h3>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
     </div>
@@ -121,9 +154,14 @@ export default function Home({ channels }: Props) {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async () => {
+  const apiUrl = process.env.VIDEO_URI || "http://tv.roarzone.info/app.php?per=true";
   try {
-    const res = await fetch("http://tv.roarzone.info/app.php?per=true");
-    const channels: Channel[] = res.ok ? await res.json() : [];
+    const res = await fetch(apiUrl);
+    if (!res.ok) {
+      console.error(`Upstream status: ${res.status}`);
+      return { props: { channels: [] } };
+    }
+    const channels: Channel[] = await res.json();
     return { props: { channels } };
   } catch (err) {
     console.error("SSR fetch error:", err);

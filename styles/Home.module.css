@@ -2,9 +2,11 @@
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
+  background-color: #000;
 }
 
 .main {
+  background-color: #000;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -30,10 +32,12 @@
 }
 
 .search {
+  background-color: #222;
+  color: #fff;
   width: 100%;
   padding: 0.8rem;
   font-size: 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid #444;
   border-radius: 4px;
   margin: 1rem 0;
 }
@@ -46,8 +50,9 @@
 }
 
 .card {
-  background: #fff;
-  border: 1px solid #eaeaea;
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
   border-radius: 8px;
   padding: 0.75rem;
   cursor: pointer;
@@ -83,8 +88,105 @@
 }
 
 .header {
+  /* center it, add padding, etc */
   display: flex;
   align-items: center;
+  justify-content: center;
+  background: #FFC519;
+  /* padding: 1rem 0; */
+}
+
+.logo {
+  /* size your logo */
+  width: 220px;    /* adjust to taste */
+  height: auto;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  /* align-self: center; */
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  /* Flow items in columns (left→right), auto-wrapping into 2 rows */
+  grid-auto-flow: column;
+  grid-auto-columns: 200px;        /* each column is 200px wide */
+  grid-template-rows: repeat(2, 200px); /* two rows, each 200px tall */
+  gap: 1rem;                     
+  /* enable horizontal scroll */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  /* fix the container height to exactly two rows + gap */
+  height: calc(200px * 2 + 1rem);
+  padding: 1rem 0;
+}
+
+.gridWrapper {
+  /* container has padding:1rem by default,
+     so pull the grid 1rem to the left/right: */
+  margin: 0 -1rem;
+}
+
+.card {
+  /* ensure each card is square */
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  cursor: pointer;
+}
+
+.thumb {
+  /* make your image fit nicely */
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+.gridScrollable {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 200px;
+  grid-template-rows: repeat(2, 200px);
+  gap: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  /* only top/bottom padding */
+  padding: 1rem 0;
+  
+  /* exact height for two rows + vertical gap */
+  height: calc(200px * 2 + 1rem);
+}
+
+
+/* Square cards inside the scrollable grid */
+.cardScrollable {
+  width: 200px;
+  height: 200px;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Image inside each card */
+.thumbScrollable {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+/* Optional: override your .card hover if you want */
+.cardScrollable:hover {
+  transform: translateY(-2px);
 }
