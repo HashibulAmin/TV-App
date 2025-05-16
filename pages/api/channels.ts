@@ -22,14 +22,20 @@ export default async function handler(
   try {
     const agent = new https.Agent({
       rejectUnauthorized: false,
-      timeout: 5000,
+      timeout: 15000, // Increased timeout
     });
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const upstream = await fetch("https://tv.roarzone.info/app.php?per=true", {
-      headers: { Accept: "application/json" },
+      headers: { 
+        Accept: "application/json",
+        'User-Agent': 'Mozilla/5.0' // Add user agent to prevent filtering
+      },
       agent,
-      signal: AbortSignal.timeout(5000),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
 
     if (!upstream.ok) {
       return res
@@ -42,6 +48,10 @@ export default async function handler(
     return res.status(200).json(data);
   } catch (err: any) {
     console.error("API Error fetching channels:", err);
-    return res.status(502).json({ error: "Bad Gateway", details: err.message });
+    const status = err.name === 'AbortError' ? 504 : 502;
+    return res.status(status).json({ 
+      error: status === 504 ? "Gateway Timeout" : "Bad Gateway",
+      details: err.message 
+    });
   }
 }
