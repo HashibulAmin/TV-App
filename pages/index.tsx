@@ -1,14 +1,14 @@
 // pages/index.tsx
 import dynamic from "next/dynamic";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import styles from "../styles/Home.module.css";
 
-// Only import ReactPlayer on the client
+// Dynamically load ReactPlayer on client only
 const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
 
-export type Channel = {
+type Channel = {
   ch_id:   string;
   ch_name: string;
   img_url: string;
@@ -19,18 +19,16 @@ interface Props {
   channels: Channel[];
 }
 
-export default function Home({ channels: initialChannels }: Props) {
-  const [channels]   = useState<Channel[]>(initialChannels);
-  const [filtered, setFiltered] = useState<Channel[]>(initialChannels);
+export default function Home({ channels }: Props) {
+  const [filtered, setFiltered] = useState<Channel[]>(channels);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentUrl, setCurrentUrl]   = useState("");
+  const [currentUrl, setCurrentUrl] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // fixed token for all streams
   const FIXED_TOKEN =
     "5c04cad87b3fe51326b9227801117f24ced893a3-782a46ed37420de6b02ec5a9ad8a099a-1747375362-1747364562";
 
-  // On first render, autoplay the first channel
+  // Autoplay first channel on mount
   useEffect(() => {
     if (channels.length > 0) {
       setCurrentIndex(0);
@@ -38,16 +36,17 @@ export default function Home({ channels: initialChannels }: Props) {
     }
   }, [channels]);
 
-  // Apply search filter
+  // Filter channels
   useEffect(() => {
     setFiltered(
       channels.filter((ch) =>
         ch.ch_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
+    // Reset to first of filtered
+    setCurrentIndex(0);
   }, [searchTerm, channels]);
 
-  // Helper to switch channel by index
   const updateChannel = useCallback(
     (index: number) => {
       const ch = filtered[index];
@@ -58,18 +57,16 @@ export default function Home({ channels: initialChannels }: Props) {
     [filtered]
   );
 
-  // Handle remote Next/Prev and volume Up/Down
+  // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (["ArrowRight","MediaTrackNext"].includes(e.code) || e.key==="ArrowRight") {
-        e.preventDefault();
-        updateChannel((currentIndex + 1) % filtered.length);
+      if (e.key === "ArrowRight") {
+        const next = (currentIndex + 1) % filtered.length;
+        updateChannel(next);
+      } else if (e.key === "ArrowLeft") {
+        const prev = (currentIndex - 1 + filtered.length) % filtered.length;
+        updateChannel(prev);
       }
-      if (["ArrowLeft","MediaTrackPrevious"].includes(e.code) || e.key==="ArrowLeft") {
-        e.preventDefault();
-        updateChannel((currentIndex - 1 + filtered.length) % filtered.length);
-      }
-      // volume keys typically don't reach the browser on TV; omit here or add if you see them
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -80,13 +77,7 @@ export default function Home({ channels: initialChannels }: Props) {
       <Head>
         <title>TV Channels</title>
       </Head>
-
       <main className={styles.main}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>HappyNet</h1>
-        </div>
-
-        {/* Video Player */}
         <div className={styles.player}>
           {currentUrl ? (
             <ReactPlayer
@@ -98,22 +89,16 @@ export default function Home({ channels: initialChannels }: Props) {
               style={{ backgroundColor: "#000" }}
             />
           ) : (
-            <div className={styles.placeholder}>
-              Loading channel…
-            </div>
+            <div className={styles.placeholder}>Loading...</div>
           )}
         </div>
-
-        {/* Search Bar */}
         <input
           type="text"
-          placeholder="Search channels…"
+          placeholder="Search channels..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.search}
         />
-
-        {/* Channel Grid */}
         <div className={styles.grid}>
           {filtered.map((ch, idx) => (
             <div
@@ -135,18 +120,13 @@ export default function Home({ channels: initialChannels }: Props) {
   );
 }
 
-// Server‐side fetch avoids CORS and Vercel edge restrictions
 export const getServerSideProps: GetServerSideProps<Props> = async () => {
   try {
     const res = await fetch("http://tv.roarzone.info/app.php?per=true");
-    if (!res.ok) {
-      console.error("Upstream status:", res.status);
-      return { props: { channels: [] } };
-    }
-    const channels: Channel[] = await res.json();
+    const channels: Channel[] = res.ok ? await res.json() : [];
     return { props: { channels } };
   } catch (err) {
-    console.error("Error fetching channels SSR:", err);
+    console.error("SSR fetch error:", err);
     return { props: { channels: [] } };
   }
 };
