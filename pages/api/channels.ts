@@ -1,5 +1,6 @@
-// pages/api/channels.ts
+
 import type { NextApiRequest, NextApiResponse } from "next";
+import https from "https";
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,21 +20,24 @@ export default async function handler(
   }
 
   try {
-    // ← switched to HTTP here
-    const upstream = await fetch("http://tv.roarzone.info/app.php?per=true", {
-      headers: { Accept: "application/json" },
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+      timeout: 5000,
     });
 
-    console.log("Upstream status:", upstream.status);
-    const text = await upstream.text();
-    console.log("Upstream body length:", text.length);
+    const upstream = await fetch("https://tv.roarzone.info/app.php?per=true", {
+      headers: { Accept: "application/json" },
+      agent,
+      signal: AbortSignal.timeout(5000),
+    });
 
     if (!upstream.ok) {
       return res
         .status(upstream.status)
-        .json({ error: `Upstream ${upstream.status}`, body: text });
+        .json({ error: `Upstream ${upstream.status}` });
     }
 
+    const text = await upstream.text();
     const data = JSON.parse(text);
     return res.status(200).json(data);
   } catch (err: any) {
