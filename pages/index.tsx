@@ -11,12 +11,25 @@ const Home = () => {
 
   useEffect(() => {
     fetch("/api/channels")
-      .then((res) => res.json())
-      .then((data) => {
-        setChannels(data);
-        setFiltered(data);
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
       })
-      .catch(console.error);
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setChannels(data);
+          setFiltered(data);
+        } else {
+          console.error('Invalid data format:', data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch channels:', error);
+        setChannels([]);
+        setFiltered([]);
+      });
   }, []);
 
   useEffect(() => {
