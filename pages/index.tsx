@@ -28,25 +28,32 @@ export default function Home() {
 
   // Fetch channel list and autoplay first (client-side only)
   useEffect(() => {
-    fetch("/api/channels")
-      .then((res) => {
+    // Only run in the browser
+    if (typeof window === "undefined") return;
+  
+    // // Use the same protocol your page is on (http or https)
+    // const protocol = window.location.protocol; 
+    // const channelApi = `${protocol}//tv.roarzone.info/app.php?per=true`;
+  
+    fetch('/api/v1/videos', {
+      method: "GET",
+      mode: "cors",
+      cache: "no-cache",
+    })
+      .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => {
-        if (Array.isArray(data)) {
+      .then((data: Channel[]) => {
+        if (Array.isArray(data) && data.length) {
           setChannels(data);
           setFiltered(data);
-          if (data.length > 0) {
-            // autoplay first channel
-            setCurrentIndex(0);
-            setCurrentUrl(data[0].ch_url + FIXED_TOKEN);
-          }
-        } else {
-          console.error("Unexpected payload:", data);
+          // Autoplay first channel
+          setCurrentIndex(0);
+          setCurrentUrl(data[0].ch_url + FIXED_TOKEN);
         }
       })
-      .catch((err) => {
+      .catch(err => {
         console.error("Failed to fetch channels:", err);
       });
   }, []);
