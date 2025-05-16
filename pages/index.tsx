@@ -11,7 +11,7 @@ const Home = () => {
   const [currentUrl, setCurrentUrl] = useState('');
 
   useEffect(() => {
-    fetch('http://tv.roarzone.info/app.php?per=true')
+    fetch('/api/channels')
       .then(res => res.json())
       .then(data => {
         setChannels(data);
