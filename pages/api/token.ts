@@ -1,4 +1,6 @@
+
 import type { NextApiRequest, NextApiResponse } from "next";
+import https from "https";
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,13 +14,18 @@ export default async function handler(
   }
 
   try {
-    // POST to the original PHP endpoint to get the time-limited token path
-    const upstream = await fetch(`http://tv.roarzone.info/${ch_id}`, {
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+      timeout: 5000,
+    });
+
+    const upstream = await fetch(`https://tv.roarzone.info/${ch_id}`, {
       method: "POST",
       headers: {
-        // Base64 of "admin:admin123"
         Authorization: "Basic YWRtaW46YWRtaW4xMjM=",
       },
+      agent,
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!upstream.ok) {
@@ -26,15 +33,12 @@ export default async function handler(
     }
 
     let text = await upstream.text();
-    // upstream responds like: "/roarzone/bk/102/index.m3u8?token=XYZ"
     text = text.trim().replace(/^\//, "");
-
-    // Build full HLS URL on the actual stream host
-    const full = `http://peer19.roarzone.info:8080/${text}`;
+    const full = `https://peer19.roarzone.info:8080/${text}`;
 
     return res.status(200).json({ path: full });
   } catch (err: any) {
     console.error("Token API error:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(503).json({ error: "Service temporarily unavailable" });
   }
 }
