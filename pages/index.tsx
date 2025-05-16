@@ -1,7 +1,11 @@
+// pages/index.tsx
+import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback } from "react";
 import Head from "next/head";
-import ReactPlayer from "react-player";
 import styles from "../styles/Home.module.css";
+
+// Load ReactPlayer only on the client to avoid SSR issues
+const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
 
 type Channel = {
   ch_id:   string;
@@ -16,12 +20,13 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUrl, setCurrentUrl] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [volume, setVolume] = useState(0.8); // default 80%
 
   // fixed token for all streams
   const FIXED_TOKEN =
     "5c04cad87b3fe51326b9227801117f24ced893a3-782a46ed37420de6b02ec5a9ad8a099a-1747375362-1747364562";
 
-  // Fetch channel list and autoplay first
+  // Fetch channel list and autoplay first (client-side only)
   useEffect(() => {
     fetch("/api/channels")
       .then((res) => {
@@ -58,35 +63,51 @@ export default function Home() {
   // Helper to update current channel
   const updateChannel = useCallback(
     (index: number) => {
-      const ch = channels[index];
+      const ch = filtered[index];
       if (!ch) return;
       setCurrentIndex(index);
       setCurrentUrl(ch.ch_url + FIXED_TOKEN);
     },
-    [channels, FIXED_TOKEN]
+    [filtered]
   );
 
-  // Handle remote Next/Prev buttons
+  // Handle remote Next/Prev and Volume Up/Down keys
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.code === "MediaTrackNext") {
+      // CHANNEL NAVIGATION
+      if (["ArrowRight","MediaTrackNext","ChannelDown"].includes(e.code) || e.key==="ArrowRight") {
         e.preventDefault();
-        const next = (currentIndex + 1) % channels.length;
-        updateChannel(next);
-      } else if (e.key === "ArrowLeft" || e.code === "MediaTrackPrevious") {
+        updateChannel((currentIndex + 1) % filtered.length);
+      }
+      else if (["ArrowLeft","MediaTrackPrevious","ChannelUp"].includes(e.code) || e.key==="ArrowLeft") {
         e.preventDefault();
-        const prev = (currentIndex - 1 + channels.length) % channels.length;
-        updateChannel(prev);
+        updateChannel((currentIndex - 1 + filtered.length) % filtered.length);
+      }
+  
+      // VOLUME CONTROL (if the TV forwards these)
+      else if (["ArrowUp","AudioVolumeUp","VolumeUp","MediaVolumeUp"].includes(e.code) || e.key==="ArrowUp") {
+        e.preventDefault();
+        setVolume(v => Math.min(1, v + 0.1));
+      }
+      else if (["ArrowDown","AudioVolumeDown","VolumeDown","MediaVolumeDown"].includes(e.code) || e.key==="ArrowDown") {
+        e.preventDefault();
+        setVolume(v => Math.max(0, v - 0.1));
       }
     };
+  
+    // Log unknown keys during testing:
+    const logger = (e: KeyboardEvent) => console.log("KeyEvent:", e.key, e.code);
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [channels.length, currentIndex, updateChannel]);
+    window.addEventListener("keydown", logger);
+  
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("keydown", logger);
+    };
+  }, [filtered, currentIndex, updateChannel]);
 
   // On user click
-  const selectChannel = (index: number) => {
-    updateChannel(index);
-  };
+  const selectChannel = (index: number) => updateChannel(index);
 
   return (
     <div className={styles.container}>
@@ -98,6 +119,7 @@ export default function Home() {
         <div className={styles.header}>
           <h1 className={styles.title}>HappyNet</h1>
         </div>
+
         {/* Video Player */}
         <div className={styles.player}>
           {currentUrl ? (
@@ -105,6 +127,7 @@ export default function Home() {
               url={currentUrl}
               playing
               controls
+              volume={volume}
               width="100%"
               height="100%"
               style={{ backgroundColor: "#000" }}
