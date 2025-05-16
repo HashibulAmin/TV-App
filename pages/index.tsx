@@ -29,8 +29,7 @@ export default function Home({ channels }: Props) {
   // const [muted, setMuted] = useState(false);
   // const [playbackRate, setPlaybackRate] = useState(1.0);
 
-  const FIXED_TOKEN =
-    "1fd181a9b035498110ec2a36a585b378be52fe13-13683c860a7b7efc2a6e45dcf182723b-1747408584-1747397784";
+  const FIXED_TOKEN = process.env.NEXT_PUBLIC_FIXED_TOKEN!;
 
   // Autoplay first channel on mount
   useEffect(() => {
@@ -180,7 +179,7 @@ export default function Home({ channels }: Props) {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async () => {
-  const apiUrl = process.env.VIDEO_URI || "http://tv.roarzone.info/app.php?per=true";
+  const apiUrl = process.env.VIDEO_URI! || "http://tv.roarzone.info/app.php?per=true";
   try {
     const res = await fetch(apiUrl);
     if (!res.ok) {
