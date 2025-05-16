@@ -31,10 +31,12 @@ export default async function handler(
     const upstream = await fetch("https://tv.roarzone.info/app.php?per=true", {
       headers: { 
         Accept: "application/json",
-        'User-Agent': 'Mozilla/5.0' // Add user agent to prevent filtering
+        'User-Agent': 'Mozilla/5.0',
+        'Cache-Control': 'no-cache'
       },
       agent,
       signal: controller.signal,
+      timeout: 5000 // Reduce timeout to fail faster
     }).finally(() => clearTimeout(timeoutId));
 
     if (!upstream.ok) {

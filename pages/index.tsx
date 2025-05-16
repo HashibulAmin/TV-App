@@ -18,9 +18,9 @@ export default function Home() {
   const [currentUrl, setCurrentUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ❶ Fetch channels directly from the PHP backend
+  // Fetch channels through our API endpoint
   useEffect(() => {
-    fetch("http://tv.roarzone.info/app.php?per=true")
+    fetch("/api/channels")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -35,6 +35,9 @@ export default function Home() {
       })
       .catch((err) => {
         console.error("Failed to fetch channels:", err);
+        // Show error state to user
+        setChannels([]);
+        setFiltered([]);
       });
   }, []);
 
