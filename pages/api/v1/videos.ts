@@ -18,7 +18,7 @@ export default async function handler(
   try {
     // Try HTTPS first, fallback to HTTP
     let upstream = await fetch(
-      "https://tv.roarzone.info/app.php?per=true",
+      "http://tv.roarzone.info/app.php?per=true",
       { headers: { Accept: "application/json" } }
     ).catch(() =>
       fetch("http://tv.roarzone.info/app.php?per=true", {
