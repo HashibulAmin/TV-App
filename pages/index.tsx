@@ -1,19 +1,18 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import Head from "next/head";
-import ReactPlayer from 'react-player';
+import ReactPlayer from "react-player";
 import styles from "../styles/Home.module.css";
 
 const Home = () => {
   const [channels, setChannels] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [filtered, setFiltered] = useState([]);
-  const [currentUrl, setCurrentUrl] = useState('');
+  const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
-    fetch('/api/channels')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/channels")
+      .then((res) => res.json())
+      .then((data) => {
         setChannels(data);
         setFiltered(data);
       })
@@ -21,8 +20,8 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const f = channels.filter(ch =>
-      ch.ch_name.toLowerCase().includes(searchTerm.toLowerCase())
+    const f = channels.filter((ch) =>
+      ch.ch_name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     setFiltered(f);
   }, [searchTerm, channels]);
@@ -42,7 +41,7 @@ const Home = () => {
               controls
               width="100%"
               height="100%"
-              style={{ backgroundColor: '#000' }}
+              style={{ backgroundColor: "#000" }}
             />
           ) : (
             <div className={styles.placeholder}>Select a channel to watch</div>
@@ -53,14 +52,14 @@ const Home = () => {
           type="text"
           placeholder="Search channels..."
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.search}
         />
 
         <div className={styles.grid}>
-          {filtered.map(ch => (
-            <div 
-              key={ch.ch_id} 
+          {filtered.map((ch) => (
+            <div
+              key={ch.ch_id}
               className={styles.card}
               onClick={() => setCurrentUrl(ch.ch_url)}
             >
