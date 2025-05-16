@@ -1,6 +1,6 @@
 // pages/index.tsx
 import dynamic from "next/dynamic";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import styles from "../styles/Home.module.css";
@@ -25,6 +25,7 @@ export default function Home({ channels }: Props) {
   const [currentUrl, setCurrentUrl] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [volume, setVolume] = useState(0.5);
+  const scrollRef = useRef<HTMLDivElement>(null);
   // const [muted, setMuted] = useState(false);
   // const [playbackRate, setPlaybackRate] = useState(1.0);
 
@@ -49,6 +50,17 @@ export default function Home({ channels }: Props) {
     // Reset to first of filtered
     setCurrentIndex(0);
   }, [searchTerm, channels]);
+
+  const scrollByItems = (direction: "left" | "right") => {
+      if (!scrollRef.current) return;
+      const gap = 16;               // matches your CSS 1rem gap
+      const cardWidth = 200;        // matches your CSS grid-auto-columns
+      const amount = (cardWidth + gap) * 2;
+      scrollRef.current.scrollBy({
+        left: direction === "right" ? amount : -amount,
+        behavior: "smooth",
+      });
+    };
 
   const updateChannel = useCallback(
     (index: number) => {
@@ -130,8 +142,22 @@ export default function Home({ channels }: Props) {
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.search}
         />
+        <div className={styles.controls}>
+          <div className={styles.arrows}>
+            <button
+              onClick={() => scrollByItems("left")}
+              aria-label="Scroll Left"
+              className={styles.arrowBtn}
+            >‹</button>
+            <button
+              onClick={() => scrollByItems("right")}
+              aria-label="Scroll Right"
+              className={styles.arrowBtn}
+            >›</button>
+          </div>
+        </div>  
         <div className={styles.gridWrapper}>
-          <div className={styles.gridScrollable}>
+          <div ref={scrollRef} className={styles.gridScrollable}>
             {filtered.map((ch, idx) => (
               <div
                 key={ch.ch_id}

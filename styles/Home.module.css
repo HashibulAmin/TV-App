@@ -91,9 +91,9 @@
   /* center it, add padding, etc */
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   background: #FFC519;
-  /* padding: 1rem 0; */
+  padding: 0 1rem;
 }
 
 .logo {
@@ -147,6 +147,32 @@
   max-width: 100%;
   max-height: 120px;
   object-fit: contain;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 0;
+}
+
+/* Arrow button container */
+.arrows {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Individual arrow buttons */
+.arrowBtn {
+  background: transparent;
+  border: none;
+  color: #fff;           /* or your highlight color */
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+.arrowBtn:focus {
+  outline: 2px solid #0070f3;
 }
 
 .gridScrollable {
